@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/students")
@@ -66,6 +67,31 @@ public class StudentController {
         return ResponseEntity.ok(result);
     }
 
+    @PatchMapping("/{id}")
+    public ResponseEntity<Student> partialUpdateStudent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+        // Check if student exists
+        Student existingStudent = studentDAO.findById(id);
+        if (existingStudent == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        // Apply only the fields that are present in the request body
+        if (updates.containsKey("firstName")) {
+            existingStudent.setFirstName((String) updates.get("firstName"));
+        }
+        if (updates.containsKey("lastName")) {
+            existingStudent.setLastName((String) updates.get("lastName"));
+        }
+        if (updates.containsKey("email")) {
+            existingStudent.setEmail((String) updates.get("email"));
+        }
+
+        // Update the student using the merge method
+        Student result = studentDAO.update(existingStudent);
+
+        return ResponseEntity.ok(result);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         // Check if student exists
@@ -74,9 +100,15 @@ public class StudentController {
             return ResponseEntity.notFound().build();
         }
 
-        // Delete the student
-        studentDAO.deleteById(id);
+        // Delete the student directly using the found instance
+        studentDAO.delete(existingStudent);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping
+    public ResponseEntity<Void> deleteAllStudents() {
+        studentDAO.deleteAll();
         return ResponseEntity.noContent().build();
     }
 }

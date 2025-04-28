@@ -11,11 +11,15 @@ public interface StudentDAO {
 
     Student update(Student student);
 
-    void deleteById(Long id);
+    // Changed method signature to accept Student object directly
+    void delete(Student student);
 
     List<Student> findByLastNameContaining(String lastName);
 
     List<Student> findByFirstNameContaining(String firstName);
 
     List<Student> searchStudents(String firstName, String lastName, String email);
+
+    // Add method to delete all students
+    void deleteAll();
 }
