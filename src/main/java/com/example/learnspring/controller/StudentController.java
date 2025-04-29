@@ -1,9 +1,8 @@
 package com.example.learnspring.controller;
 
 import com.example.learnspring.entity.Student;
-import com.example.learnspring.dao.StudentDAO;
+import com.example.learnspring.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,26 +13,25 @@ import java.util.Map;
 @RequestMapping("/api/students")
 public class StudentController {
 
-    private final StudentDAO studentDAO;
+    private final StudentService studentService;
 
     @Autowired
-    public StudentController(StudentDAO studentDAO) {
-        this.studentDAO = studentDAO;
+    public StudentController(StudentService studentService) {
+        this.studentService = studentService;
     }
 
     @PostMapping
     public void createStudent(@RequestBody Student student) {
-        studentDAO.save(student);
+        studentService.save(student);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable Long id) {
-        Student student = studentDAO.findById(id);
-        if (student != null) {
-            return ResponseEntity.ok(student);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    public Student getStudentById(@PathVariable Long id) {
+        Student student = studentService.findById(id);
+        if (student == null) {
+            throw new StudentNotFoundException("Student id not found - " + id);
         }
+        return student;
     }
 
     @GetMapping
@@ -42,7 +40,7 @@ public class StudentController {
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) String email) {
 
-        List<Student> students = studentDAO.searchStudents(firstName, lastName, email);
+        List<Student> students = studentService.searchStudents(firstName, lastName, email);
 
         if (students.isEmpty()) {
             return ResponseEntity.noContent().build();
@@ -51,28 +49,26 @@ public class StudentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student updatedStudent) {
+    public Student updateStudent(@PathVariable Long id, @RequestBody Student updatedStudent) {
         // Check if student exists
-        Student existingStudent = studentDAO.findById(id);
+        Student existingStudent = studentService.findById(id);
         if (existingStudent == null) {
-            return ResponseEntity.notFound().build();
+            throw new StudentNotFoundException("Student id not found - " + id);
         }
 
         // Set the id to ensure we update the existing record
         updatedStudent.setId(id);
 
         // Update the student
-        Student result = studentDAO.update(updatedStudent);
-
-        return ResponseEntity.ok(result);
+        return studentService.update(updatedStudent);
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<Student> partialUpdateStudent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+    public Student partialUpdateStudent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
         // Check if student exists
-        Student existingStudent = studentDAO.findById(id);
+        Student existingStudent = studentService.findById(id);
         if (existingStudent == null) {
-            return ResponseEntity.notFound().build();
+            throw new StudentNotFoundException("Student id not found - " + id);
         }
 
         // Apply only the fields that are present in the request body
@@ -87,28 +83,26 @@ public class StudentController {
         }
 
         // Update the student using the merge method
-        Student result = studentDAO.update(existingStudent);
-
-        return ResponseEntity.ok(result);
+        return studentService.update(existingStudent);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         // Check if student exists
-        Student existingStudent = studentDAO.findById(id);
+        Student existingStudent = studentService.findById(id);
         if (existingStudent == null) {
-            return ResponseEntity.notFound().build();
+            throw new StudentNotFoundException("Student id not found - " + id);
         }
 
         // Delete the student directly using the found instance
-        studentDAO.delete(existingStudent);
+        studentService.delete(existingStudent);
 
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping
     public ResponseEntity<Void> deleteAllStudents() {
-        studentDAO.deleteAll();
+        studentService.deleteAll();
         return ResponseEntity.noContent().build();
     }
 }

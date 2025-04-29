@@ -5,7 +5,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +23,6 @@ public class StudentDAOImpl implements StudentDAO {
     }
 
     @Override
-    @Transactional
     public void save(Student student) {
         entityManager.persist(student);
     }
@@ -35,20 +33,17 @@ public class StudentDAOImpl implements StudentDAO {
     }
 
     @Override
-    @Transactional
     public Student update(Student student) {
         return entityManager.merge(student);
     }
 
     @Override
-    @Transactional
     public void delete(Student student) {
         // Remove the student directly without finding it again
         entityManager.remove(student);
     }
 
     @Override
-    @Transactional
     public void deleteAll() {
         // Using a JPQL query to delete all students
         entityManager.createQuery("DELETE FROM Student").executeUpdate();
