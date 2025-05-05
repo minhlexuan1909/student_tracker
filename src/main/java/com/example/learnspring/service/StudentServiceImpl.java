@@ -2,6 +2,7 @@ package com.example.learnspring.service;
 
 import com.example.learnspring.dao.StudentDAO;
 import com.example.learnspring.entity.Student;
+import com.example.learnspring.repository.StudentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,39 +13,41 @@ import java.util.List;
 public class StudentServiceImpl implements StudentService {
 
     private final StudentDAO studentDAO;
+    private final StudentRepository studentRepository;
 
     @Autowired
-    public StudentServiceImpl(StudentDAO studentDAO) {
+    public StudentServiceImpl(StudentDAO studentDAO, StudentRepository studentRepository) {
         this.studentDAO = studentDAO;
+        this.studentRepository = studentRepository;
     }
 
     @Override
     @Transactional
     public void save(Student student) {
-        studentDAO.save(student);
+        studentRepository.save(student);
     }
 
     @Override
     public Student findById(Long id) {
-        return studentDAO.findById(id);
+        return studentRepository.findById(id).orElse(null);
     }
 
     @Override
     @Transactional
     public Student update(Student student) {
-        return studentDAO.update(student);
+        return studentRepository.save(student);
     }
 
     @Override
     @Transactional
     public void delete(Student student) {
-        studentDAO.delete(student);
+        studentRepository.delete(student);
     }
 
     @Override
     @Transactional
     public void deleteAll() {
-        studentDAO.deleteAll();
+        studentRepository.deleteAll();
     }
 
     @Override
