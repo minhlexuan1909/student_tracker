@@ -2,6 +2,8 @@ package com.example.learnspring.controller;
 
 import com.example.learnspring.entity.Student;
 import com.example.learnspring.service.StudentService;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,10 +16,12 @@ import java.util.Map;
 public class StudentController {
 
     private final StudentService studentService;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public StudentController(StudentService studentService) {
+    public StudentController(StudentService studentService, ObjectMapper objectMapper) {
         this.studentService = studentService;
+        this.objectMapper = objectMapper;
     }
 
     @PostMapping
@@ -64,26 +68,31 @@ public class StudentController {
     }
 
     @PatchMapping("/{id}")
-    public Student partialUpdateStudent(@PathVariable Long id, @RequestBody Map<String, Object> updates) {
+    public Student partialUpdateStudent(@PathVariable Long id, @RequestBody JsonNode patch) {
         // Check if student exists
         Student existingStudent = studentService.findById(id);
         if (existingStudent == null) {
             throw new StudentNotFoundException("Student id not found - " + id);
         }
 
-        // Apply only the fields that are present in the request body
-        if (updates.containsKey("firstName")) {
-            existingStudent.setFirstName((String) updates.get("firstName"));
-        }
-        if (updates.containsKey("lastName")) {
-            existingStudent.setLastName((String) updates.get("lastName"));
-        }
-        if (updates.containsKey("email")) {
-            existingStudent.setEmail((String) updates.get("email"));
-        }
+        try {
+            // Convert existing student to JsonNode
+            JsonNode studentNode = objectMapper.convertValue(existingStudent, JsonNode.class);
 
-        // Update the student using the merge method
-        return studentService.update(existingStudent);
+            // Apply the patch (merge updates into the existing JsonNode)
+            JsonNode patchedNode = objectMapper.readerForUpdating(studentNode).readValue(patch);
+
+            // Convert patched JsonNode back to Student object
+            Student patchedStudent = objectMapper.treeToValue(patchedNode, Student.class);
+
+            // Ensure the ID remains unchanged
+            patchedStudent.setId(id);
+
+            // Update the student in the database
+            return studentService.update(patchedStudent);
+        } catch (Exception e) {
+            throw new RuntimeException("Error applying patch to student: " + e.getMessage(), e);
+        }
     }
 
     @DeleteMapping("/{id}")
